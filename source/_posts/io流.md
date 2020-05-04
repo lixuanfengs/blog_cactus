@@ -1086,6 +1086,97 @@ Person p1 = (Person)ois.readObject();
 System.out.println(p1.toString()); ois.close();
 ```
 
+```java
+/**
+ * 对象流的使用
+ * 1.ObjectInputStream 和 ObjectOutputStream
+ * 2.作用：用于存储和读取基本数据类型数据或对象的处理流。它的强大之处就是可以把Java中的对象写入到数据源中，也能把对象从数据源中还原回来。
+ *
+ * 3.要想一个java对象是可序列化的，需要满足相应的要求。见Person.java
+ *
+ * 4.序列化机制：
+ * 对象序列化机制允许把内存中的Java对象转换成平台无关的二进制流，从而允许把这种
+ * 二进制流持久地保存在磁盘上，或通过网络将这种二进制流传输到另一个网络节点。
+ * 当其它程序获取了这种二进制流，就可以恢复成原来的Java对象。
+ */
+public class ObjectInputOutputStreamTest {
+
+    /*
+    序列化过程：将内存中的java对象保存到磁盘中或通过网络传输出去
+    使用ObjectOutputStream实现
+     */
+    @Test
+    public void testObjectOutputStream(){
+        ObjectOutputStream oos = null;
+
+        try {
+            //1.
+            oos = new ObjectOutputStream(new FileOutputStream("object.dat"));
+            //2.
+            oos.writeObject(new String("我爱北京天安门"));
+            oos.flush();//刷新操作
+
+            oos.writeObject(new Person("王铭",23));
+            oos.flush();
+
+            oos.writeObject(new Person("张学良",23,1001,new Account(5000)));
+            oos.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if(oos != null){
+                //3.
+                try {
+                    oos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+
+    }
+
+    /*
+    反序列化：将磁盘文件中的对象还原为内存中的一个java对象
+    使用ObjectInputStream来实现
+     */
+    @Test
+    public void testObjectInputStream(){
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(new FileInputStream("object.dat"));
+
+            Object obj = ois.readObject();
+            String str = (String) obj;
+
+            Person p = (Person) ois.readObject();
+            Person p1 = (Person) ois.readObject();
+
+            System.out.println(str);
+            System.out.println(p);
+            System.out.println(p1);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if(ois != null){
+                try {
+                    ois.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
+}
+```
+
 **谈谈你对java.io.Serializable接口的理解，我们知道它用于序列化， 是空方法接口，还有其它认识吗？**
 
 * 实现了Serializable接口的对象，可将它们转换成一系列字节，并可在以后完全恢复回原来的样子。这一过程亦可通过网络进行。这意味着序列化机制能自动补偿操作系统间的差异。换句话说，可以先在Windows机器上创建一个对象，对其序列化，然后通过网络发给一台Unix机器，然后在那里准确无误地重新“装配”。不必关心数据在不同机器上如何表示，也不必关心字节的顺序或者其他任何细节。
@@ -1179,8 +1270,104 @@ raf1.close();
 * 处理数据时，一定要先明确`数据源`，与`数据目的地`
   * 数据源可以是文件，可以是键盘。
   * 数据目的地可以是文件、显示器或者其他设备。
-
 * 而流只是在帮助数据进行传输,并对传输的数据进行处理，比如过滤处理、转换处理等。
+
+```
+/**
+ * RandomAccessFile的使用
+ * 1.RandomAccessFile直接继承于java.lang.Object类，实现了DataInput和DataOutput接口
+ * 2.RandomAccessFile既可以作为一个输入流，又可以作为一个输出流
+ *
+ * 3.如果RandomAccessFile作为输出流时，写出到的文件如果不存在，则在执行过程中自动创建。
+ *   如果写出到的文件存在，则会对原有文件内容进行覆盖。（默认情况下，从头覆盖）
+ *
+ * 4. 可以通过相关的操作，实现RandomAccessFile“插入”数据的效果
+ *
+ * @author shkstart
+ * @create 2019 上午 11:18
+ */
+public class RandomAccessFileTest {
+
+    @Test
+    public void test1() {
+
+        RandomAccessFile raf1 = null;
+        RandomAccessFile raf2 = null;
+        try {
+            //1.
+            raf1 = new RandomAccessFile(new File("爱情与友情.jpg"),"r");
+            raf2 = new RandomAccessFile(new File("爱情与友情1.jpg"),"rw");
+            //2.
+            byte[] buffer = new byte[1024];
+            int len;
+            while((len = raf1.read(buffer)) != -1){
+                raf2.write(buffer,0,len);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            //3.
+            if(raf1 != null){
+                try {
+                    raf1.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            if(raf2 != null){
+                try {
+                    raf2.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
+    @Test
+    public void test2() throws IOException {
+
+        RandomAccessFile raf1 = new RandomAccessFile("hello.txt","rw");
+
+        raf1.seek(3);//将指针调到角标为3的位置
+        raf1.write("xyz".getBytes());//
+
+        raf1.close();
+
+    }
+    /*
+    使用RandomAccessFile实现数据的插入效果
+     */
+    @Test
+    public void test3() throws IOException {
+
+        RandomAccessFile raf1 = new RandomAccessFile("hello.txt","rw");
+
+        raf1.seek(3);//将指针调到角标为3的位置
+        //保存指针3后面的所有数据到StringBuilder中
+        StringBuilder builder = new StringBuilder((int) new File("hello.txt").length());
+        byte[] buffer = new byte[20];
+        int len;
+        while((len = raf1.read(buffer)) != -1){
+            builder.append(new String(buffer,0,len)) ;
+        }
+        //调回指针，写入“xyz”
+        raf1.seek(3);
+        raf1.write("xyz".getBytes());
+
+        //将StringBuilder中的数据写入到文件中
+        raf1.write(builder.toString().getBytes());
+
+        raf1.close();
+
+        //思考：将StringBuilder替换为ByteArrayOutputStream
+    }
+}
+```
+
+
 
 ##  NIO.2中Path、Paths、Files类的使用
 
@@ -1266,3 +1453,182 @@ raf1.close();
   * DirectoryStream`<Path>` newDirectoryStream(Path path) : 打开 path 指定的目录
   * InputStream newInputStream(Path path, OpenOption…how):获取 InputStream 对象
   * OutputStream newOutputStream(Path path, OpenOption…how) : 获取 OutputStream 对象
+
+**【练习】**
+
+```java
+/**
+ * 1. jdk 7.0 时，引入了 Path、Paths、Files三个类。
+ * 2.此三个类声明在：java.nio.file包下。
+ * 3.Path可以看做是java.io.File类的升级版本。也可以表示文件或文件目录，与平台无关
+ * <p>
+ * 4.如何实例化Path:使用Paths.
+ * static Path get(String first, String … more) : 用于将多个字符串串连成路径
+ * static Path get(URI uri): 返回指定uri对应的Path路径
+ */
+public class PathTest {
+
+    //如何使用Paths实例化Path
+    @Test
+    public void test1() {
+        Path path1 = Paths.get("d:\\nio\\hello.txt");//new File(String filepath)
+
+        Path path2 = Paths.get("d:\\", "nio\\hello.txt");//new File(String parent,String filename);
+
+        System.out.println(path1);
+        System.out.println(path2);
+
+        Path path3 = Paths.get("d:\\", "nio");
+        System.out.println(path3);
+    }
+
+    //Path中的常用方法
+    @Test
+    public void test2() {
+        Path path1 = Paths.get("d:\\", "nio\\nio1\\nio2\\hello.txt");
+        Path path2 = Paths.get("hello.txt");
+
+//		String toString() ： 返回调用 Path 对象的字符串表示形式
+        System.out.println(path1);
+
+//		boolean startsWith(String path) : 判断是否以 path 路径开始
+        System.out.println(path1.startsWith("d:\\nio"));
+//		boolean endsWith(String path) : 判断是否以 path 路径结束
+        System.out.println(path1.endsWith("hello.txt"));
+//		boolean isAbsolute() : 判断是否是绝对路径
+        System.out.println(path1.isAbsolute() + "~");
+        System.out.println(path2.isAbsolute() + "~");
+//		Path getParent() ：返回Path对象包含整个路径，不包含 Path 对象指定的文件路径
+        System.out.println(path1.getParent());
+        System.out.println(path2.getParent());
+//		Path getRoot() ：返回调用 Path 对象的根路径
+        System.out.println(path1.getRoot());
+        System.out.println(path2.getRoot());
+//		Path getFileName() : 返回与调用 Path 对象关联的文件名
+        System.out.println(path1.getFileName() + "~");
+        System.out.println(path2.getFileName() + "~");
+//		int getNameCount() : 返回Path 根目录后面元素的数量
+//		Path getName(int idx) : 返回指定索引位置 idx 的路径名称
+        for (int i = 0; i < path1.getNameCount(); i++) {
+            System.out.println(path1.getName(i) + "*****");
+        }
+
+//		Path toAbsolutePath() : 作为绝对路径返回调用 Path 对象
+        System.out.println(path1.toAbsolutePath());
+        System.out.println(path2.toAbsolutePath());
+//		Path resolve(Path p) :合并两个路径，返回合并后的路径对应的Path对象
+        Path path3 = Paths.get("d:\\", "nio");
+        Path path4 = Paths.get("nioo\\hi.txt");
+        path3 = path3.resolve(path4);
+        System.out.println(path3);
+
+//		File toFile(): 将Path转化为File类的对象
+        File file = path1.toFile();//Path--->File的转换
+
+        Path newPath = file.toPath();//File--->Path的转换
+    }
+}
+```
+
+```java
+/**
+ * Files工具类的使用：操作文件或目录的工具类
+ */
+public class FilesTest {
+
+	@Test
+	public void test1() throws IOException{
+		Path path1 = Paths.get("d:\\nio", "hello.txt");
+		Path path2 = Paths.get("atguigu.txt");
+		
+//		Path copy(Path src, Path dest, CopyOption … how) : 文件的复制
+		//要想复制成功，要求path1对应的物理上的文件存在。path1对应的文件没有要求。
+//		Files.copy(path1, path2, StandardCopyOption.REPLACE_EXISTING);
+		
+//		Path createDirectory(Path path, FileAttribute<?> … attr) : 创建一个目录
+		//要想执行成功，要求path对应的物理上的文件目录不存在。一旦存在，抛出异常。
+		Path path3 = Paths.get("d:\\nio\\nio1");
+//		Files.createDirectory(path3);
+		
+//		Path createFile(Path path, FileAttribute<?> … arr) : 创建一个文件
+		//要想执行成功，要求path对应的物理上的文件不存在。一旦存在，抛出异常。
+		Path path4 = Paths.get("d:\\nio\\hi.txt");
+//		Files.createFile(path4);
+		
+//		void delete(Path path) : 删除一个文件/目录，如果不存在，执行报错
+//		Files.delete(path4);
+		
+//		void deleteIfExists(Path path) : Path对应的文件/目录如果存在，执行删除.如果不存在，正常执行结束
+		Files.deleteIfExists(path3);
+		
+//		Path move(Path src, Path dest, CopyOption…how) : 将 src 移动到 dest 位置
+		//要想执行成功，src对应的物理上的文件需要存在，dest对应的文件没有要求。
+//		Files.move(path1, path2, StandardCopyOption.ATOMIC_MOVE);
+		
+//		long size(Path path) : 返回 path 指定文件的大小
+		long size = Files.size(path2);
+		System.out.println(size);
+
+	}
+
+	@Test
+	public void test2() throws IOException{
+		Path path1 = Paths.get("d:\\nio", "hello.txt");
+		Path path2 = Paths.get("atguigu.txt");
+//		boolean exists(Path path, LinkOption … opts) : 判断文件是否存在
+		System.out.println(Files.exists(path2, LinkOption.NOFOLLOW_LINKS));
+
+//		boolean isDirectory(Path path, LinkOption … opts) : 判断是否是目录
+		//不要求此path对应的物理文件存在。
+		System.out.println(Files.isDirectory(path1, LinkOption.NOFOLLOW_LINKS));
+
+//		boolean isRegularFile(Path path, LinkOption … opts) : 判断是否是文件
+
+//		boolean isHidden(Path path) : 判断是否是隐藏文件
+		//要求此path对应的物理上的文件需要存在。才可判断是否隐藏。否则，抛异常。
+//		System.out.println(Files.isHidden(path1));
+
+//		boolean isReadable(Path path) : 判断文件是否可读
+		System.out.println(Files.isReadable(path1));
+//		boolean isWritable(Path path) : 判断文件是否可写
+		System.out.println(Files.isWritable(path1));
+//		boolean notExists(Path path, LinkOption … opts) : 判断文件是否不存在
+		System.out.println(Files.notExists(path1, LinkOption.NOFOLLOW_LINKS));
+	}
+
+	/**
+	 * StandardOpenOption.READ:表示对应的Channel是可读的。
+	 * StandardOpenOption.WRITE：表示对应的Channel是可写的。
+	 * StandardOpenOption.CREATE：如果要写出的文件不存在，则创建。如果存在，忽略
+	 * StandardOpenOption.CREATE_NEW：如果要写出的文件不存在，则创建。如果存在，抛异常
+	 *
+	 * @author shkstart 邮箱：shkstart@126.com
+	 * @throws IOException
+	 */
+	@Test
+	public void test3() throws IOException{
+		Path path1 = Paths.get("d:\\nio", "hello.txt");
+
+//		InputStream newInputStream(Path path, OpenOption…how):获取 InputStream 对象
+		InputStream inputStream = Files.newInputStream(path1, StandardOpenOption.READ);
+
+//		OutputStream newOutputStream(Path path, OpenOption…how) : 获取 OutputStream 对象
+		OutputStream outputStream = Files.newOutputStream(path1, StandardOpenOption.WRITE,StandardOpenOption.CREATE);
+
+
+//		SeekableByteChannel newByteChannel(Path path, OpenOption…how) : 获取与指定文件的连接，how 指定打开方式。
+		SeekableByteChannel channel = Files.newByteChannel(path1, StandardOpenOption.READ,StandardOpenOption.WRITE,StandardOpenOption.CREATE);
+
+//		DirectoryStream<Path>  newDirectoryStream(Path path) : 打开 path 指定的目录
+		Path path2 = Paths.get("e:\\teach");
+		DirectoryStream<Path> directoryStream =Files.newDirectoryStream(path2);
+		Iterator<Path> iterator = directoryStream.iterator();
+		while(iterator.hasNext()){
+			System.out.println(iterator.next());
+		}
+
+
+	}
+}
+```
+
