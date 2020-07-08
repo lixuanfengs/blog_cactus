@@ -41,7 +41,7 @@ Downloading: https://vagrantcloud.com/centos/boxes/7/versions/1902.01/providers/
 
  后面这个URL就是下载地址了，将它黏贴到迅雷等下载工具下载即可。然后将下载好后的xxx.box文件复制到vagrant_vm目录下，并且重命名为centos7.box（删除centos7.box之外的文件和目录，只保留centos7.box一个文件）。 
 
- 接着运行`vagrant box add -name 'centos/7' centos7.box`命令： 
+ 接着运行`vagrant box add --name 'centos/7' centos7.box`命令： 
 
 ![](使用Vagrant创建Centos虚拟机/vagrant_13.png)
 
@@ -105,7 +105,7 @@ Downloading: https://vagrantcloud.com/centos/boxes/7/versions/1902.01/providers/
 config.vm.synced_folder "./data", "/vagrant_data", create:true, owner: "root", group: "root"
 ```
 
-这个配置的意思是将当前路径下的data文件夹和虚拟机的/share目录共享，拥有者为root，群组为root，如果路径不存在则创建。
+这个配置的意思是将当前路径下的data文件夹和虚拟机的/vagrant_data目录共享，拥有者为root，群组为root，如果路径不存在则创建。
 
 修改了Vagrantfile文件需要执行 `vagrant reload`重启。重启后我们在data文件夹下新建一个hello.txt文件，然后连接虚拟机看看是否共享成功：
 
